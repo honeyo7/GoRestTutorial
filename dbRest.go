@@ -42,7 +42,9 @@ func Requests() {
     myRouter.HandleFunc("/", home)
 	myRouter.HandleFunc("/all", AllUsers)
 	myRouter.HandleFunc("/user/{id}", returnSingleUser)
-	myRouter.HandleFunc("/article", createNewUser).Methods("POST")
+    myRouter.HandleFunc("/newUser", createNewUser).Methods("POST")
+    myRouter.HandleFunc("/newSingleUser", createSingleNewUser).Methods("POST")
+    
     // finally, instead of passing in nil, we want
     // to pass in our newly created router as the second
     // argument
@@ -114,15 +116,16 @@ func home(w http.ResponseWriter, r *http.Request){
 
 func createNewUser(w http.ResponseWriter, r *http.Request) {
     fmt.Println("Startpoint Hit: NewUser")
+    w.Header().Add("content-type","application/json")
+    var newUsers users
+    
     reqBody, _ := ioutil.ReadAll(r.Body)
     //newUser := user{}
-    var newUsers users
+    //json.NewDecoder(r.Body).Decode(&newUsers)
 
-    err1 := json.Unmarshal(reqBody, &newUsers)
-    if err1 != nil {
-        panic(err1.Error())
-    }
+   json.Unmarshal(reqBody, &newUsers)
 
+   
     db := dbConn()
 
     for i := 0; i < len(newUsers.users); i++ {
@@ -139,13 +142,43 @@ func createNewUser(w http.ResponseWriter, r *http.Request) {
 
    // fmt.Println(newUsers.users[0].City)
 
-    fmt.Println(reqBody)
+   fmt.Println(newUsers)
+
+    fmt.Println(string(reqBody))
+
+    fmt.Println(r.Body)
 
     //fmt.Println(len(newUsers.users))
 
     fmt.Println("Endpoint Hit: NewUser")
 
-    json.NewEncoder(w).Encode(reqBody)
+    json.NewEncoder(w).Encode("Not Working")
+
+    defer db.Close()
+   
+}
+
+
+func createSingleNewUser(w http.ResponseWriter, r *http.Request) {
+    fmt.Println("Startpoint Hit: NewUser")
+    var newUsers user
+    reqBody, _ := ioutil.ReadAll(r.Body)
+    json.Unmarshal(reqBody, &newUsers)
+    db := dbConn()
+
+    _, err := db.Query("INSERT INTO users(id,name,city) VALUES('" + newUsers.Id + "','" + newUsers.Name + "','" + newUsers.City + "');")
+    if err != nil {
+        panic(err.Error())
+    }
+   fmt.Println(newUsers)
+
+    fmt.Println(string(reqBody))
+
+    fmt.Println(r.Body)
+
+    //fmt.Println(len(newUsers.users))
+
+    fmt.Println("Endpoint Hit: NewUser")
 
     defer db.Close()
    

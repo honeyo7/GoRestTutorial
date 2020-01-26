@@ -75,6 +75,8 @@ func createNewArticle(w http.ResponseWriter, r *http.Request) {
     json.Unmarshal(reqBody, &newArticle)
     // update our global Articles array to include
     // our new Article
+    fmt.Println(newArticle)
+    fmt.Println(newArticle.Id)
     Articles = append(Articles, newArticle)
 
     json.NewEncoder(w).Encode(newArticle)
