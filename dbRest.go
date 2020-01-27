@@ -19,9 +19,6 @@ type user struct {
     City string `json:"City"`
 }
 
-type users struct {
-    users []user `json:"users"`
-}
 
 func dbConn() (db *sql.DB) {
     dbDriver := "mysql"
@@ -45,10 +42,7 @@ func Requests() {
     myRouter.HandleFunc("/newUser", createNewUser).Methods("POST")
     myRouter.HandleFunc("/newSingleUser", createSingleNewUser).Methods("POST")
     
-    // finally, instead of passing in nil, we want
-    // to pass in our newly created router as the second
-    // argument
-    log.Fatal(http.ListenAndServe(":10000", myRouter))
+   log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
 
 func main() {
@@ -77,7 +71,6 @@ func AllUsers(w http.ResponseWriter, r *http.Request){
         emp.City = city
         res = append(res, emp)
     }
-   // tmpl.ExecuteTemplate(w, "Index", res)
     defer db.Close()
     json.NewEncoder(w).Encode(res)
 }
@@ -104,8 +97,7 @@ func returnSingleUser(w http.ResponseWriter, r *http.Request){
         emp.City = city
         res = append(res, emp)
     }
-   // tmpl.ExecuteTemplate(w, "Index", res)
-    defer db.Close()
+     defer db.Close()
     json.NewEncoder(w).Encode(res)
 }
 
@@ -117,30 +109,42 @@ func home(w http.ResponseWriter, r *http.Request){
 func createNewUser(w http.ResponseWriter, r *http.Request) {
     fmt.Println("Startpoint Hit: NewUser")
     w.Header().Add("content-type","application/json")
-    var newUsers users
+   
+    type sttRespMsg struct{
+        ErrorCode string `json:"ErrorCode"`
+        Message string `json:"Message"`
+    }
     
     reqBody, _ := ioutil.ReadAll(r.Body)
-    //newUser := user{}
-    //json.NewDecoder(r.Body).Decode(&newUsers)
+    newUsers := []user{}
 
    json.Unmarshal(reqBody, &newUsers)
 
+   var respMsg sttRespMsg
+
    
     db := dbConn()
+    if len(newUsers)>0{
+        for i := 0; i < len(newUsers); i++ {
+            _, err := db.Query("INSERT INTO users(id,name,city) VALUES('" + newUsers[i].Id + "','" + newUsers[i].Name + "','" + newUsers[i].City + "');")
+            if err != nil {
+                panic(err.Error())
+                respMsg.ErrorCode="0"
+                respMsg.Message=err.Error()
+                
+    
+            }else{
+                respMsg.ErrorCode="1"
+                respMsg.Message="Successfully Added!"
+            }
+         }
 
-    for i := 0; i < len(newUsers.users); i++ {
-        _, err := db.Query("INSERT INTO users(id,name,city) VALUES('" + newUsers.users[i].Id + "','" + newUsers.users[i].Name + "','" + newUsers.users[i].City + "');")
-        if err != nil {
-            panic(err.Error())
-        }
-     //   fmt.Println("INSERT INTO users(id,name,city) VALUES('" + newUsers.users[i].Id + "','" + newUsers.users[i].Name + "','" + newUsers.users[i].City + "');")
+    }else{
+        respMsg.ErrorCode="0"
+        respMsg.Message="Inalid Data!"
     }
+    
 
-    //fmt.Println(newUsers.users[0].Id)
-
-    //fmt.Println(newUsers.users[0].Name)
-
-   // fmt.Println(newUsers.users[0].City)
 
    fmt.Println(newUsers)
 
@@ -148,11 +152,9 @@ func createNewUser(w http.ResponseWriter, r *http.Request) {
 
     fmt.Println(r.Body)
 
-    //fmt.Println(len(newUsers.users))
-
     fmt.Println("Endpoint Hit: NewUser")
 
-    json.NewEncoder(w).Encode("Not Working")
+    json.NewEncoder(w).Encode(respMsg)
 
     defer db.Close()
    
@@ -175,8 +177,6 @@ func createSingleNewUser(w http.ResponseWriter, r *http.Request) {
     fmt.Println(string(reqBody))
 
     fmt.Println(r.Body)
-
-    //fmt.Println(len(newUsers.users))
 
     fmt.Println("Endpoint Hit: NewUser")
 
